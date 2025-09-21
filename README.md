@@ -25,7 +25,6 @@
 ---
 
 - [ i ] add input validation
-- [ # ] add dark mode to calendar view
 - [ # ] add add task button in calendar view (due date wont work so task isnt being added in the calendar, but its added in the kanban page)
 - [ i ] render only task of selected project in calendar view
 - [ 0 ] link labels to task incase label gets deleted it also gets deleted in the task.labels array
@@ -58,3 +57,4 @@
 - [ x ] add date to task
 - [ x ] add due date to task
 - [ x ] add calendar view
+- [ x ] add dark mode to calendar view
