@@ -103,7 +103,7 @@ function TaskCards({ statusClasses, status, selectedProject, search, setDueDate,
                       : "No description"}
                   </p>
                   {task.labels?.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1 w-[80%]">
+                    <div className="flex flex-wrap gap-1 mt-1 w-[60%]">
                       {task.labels.map((l, idx) => (
                         <span key={idx} className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">
                           {l.name}

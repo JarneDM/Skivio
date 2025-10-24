@@ -19,7 +19,7 @@ function Status({ status, selectedProject, search }) {
         <div
           {...provided.droppableProps}
           ref={provided.innerRef}
-          className={`mx-5 p-2 min-h-[80vh] rounded-lg flex flex-col items-center overflow-y-auto no-scrollbar border-black border shadow-lg ${statusClasses[status]}`}
+          className={`mx-5 p-2 h-[80vh] rounded-lg flex flex-col items-center overflow-y-scroll no-scrollbar border-black border shadow-lg ${statusClasses[status]}`}
         >
           <h3 className={`font-bold mb-2 px-3 py-1 rounded-xl w-full flex justify-center ${statusClasses[status]} dark:text-white`}>
             {status}
@@ -36,7 +36,13 @@ function Status({ status, selectedProject, search }) {
 
           {provided.placeholder}
 
-          <AddTask statusClasses={statusClasses[status]} dueDate={dueDate} setDueDate={setDueDate} />
+          <AddTask
+            statusClasses={statusClasses[status]}
+            dueDate={dueDate}
+            setDueDate={setDueDate}
+            chosenStatus={status}
+            selectedProject={selectedProject?.id}
+          />
         </div>
       )}
     </Droppable>

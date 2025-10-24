@@ -4,11 +4,11 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { Listbox } from "@headlessui/react";
 import { Check, ChevronDown, ChevronRight } from "lucide-react";
 
-function AddTask({ statusClasses, dueDate, setDueDate }) {
+function AddTask({ statusClasses, dueDate, setDueDate, chosenStatus, selectedProject }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [projectId, setProjectId] = useState(null);
-  const [status, setStatus] = useState("Todo");
+  const [projectId, setProjectId] = useState(selectedProject);
+  const [status, setStatus] = useState(chosenStatus);
   const [labels, setLabels] = useState([]);
   const [showOverlay, setShowOverlay] = useState(false);
   // const [dueDate, setDueDate] = useState("");
@@ -35,7 +35,7 @@ function AddTask({ statusClasses, dueDate, setDueDate }) {
       setTitle("");
       setDescription("");
       setProjectId(null);
-      setStatus("Todo");
+      setStatus(chosenStatus);
       setLabels([]);
       setDueDate("");
       setShowOverlay(false);
@@ -123,7 +123,7 @@ function AddTask({ statusClasses, dueDate, setDueDate }) {
 
             <Listbox value={status} onChange={setStatus}>
               <Listbox.Button className="flex w-full items-center justify-between rounded-xl border-none bg-white dark:bg-blue-900 px-3 py-2 text-blue-500 shadow-sm focus:outline-none focus:ring focus:ring-blue-500/50 transition">
-                {status ? status : "Select a project"}
+                {status ? status : chosenStatus}
                 <ChevronDown className="h-4 w-4 opacity-70" />
               </Listbox.Button>
               <Listbox.Options className="absolute z-10 mt-2 w-full rounded-xl bg-blue-900 shadow-lg ring-1 ring-black/10 focus:outline-none">
