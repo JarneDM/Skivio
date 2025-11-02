@@ -115,9 +115,9 @@ function TaskCards({ statusClasses, status, selectedProject, search, setDueDate,
                     <p
                       className={`text-[0.6rem] absolute right-2 bottom-2 font-bold shadow-sm dark:text-black ${
                         isDueToday ? "bg-red-500" : "bg-gray-200"
-                      } shadow-black p-[0.2rem] rounded-sm`}
+                      } ${task.duedate ? "" : "hidden"} shadow-black p-[0.2rem] rounded-sm`}
                     >
-                      {task.duedate ? `Due: ${new Date(task.duedate).toLocaleDateString()}` : `${today.toLocaleDateString()}`}
+                      {task.duedate ? `Due: ${new Date(task.duedate).toLocaleDateString()}` : null}
                     </p>
                   </div>
 
