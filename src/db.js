@@ -1,10 +1,17 @@
 import Dexie from "dexie";
+import dexieCloud from "dexie-cloud-addon";
 
-export const db = new Dexie("BoardlyDB");
+export const db = new Dexie("BoardlyDB", { addons: [dexieCloud] });
 db.version(1).stores({
-  projects: "++id, name",
-  tasks: "++id, title, description, status, labels, projectId, [status+projectId], duedate",
-  labels: "++id, name",
+  users: "@id, username, email, password",
+  projects: "@id, name",
+  tasks: "@id, title, description, status, labels, projectId, [status+projectId], duedate",
+  labels: "@id, name",
+});
+
+db.cloud.configure({
+  databaseUrl: import.meta.env.DB_URL,
+  requireAuth: true,
 });
 
 db.on("populate", () => {
