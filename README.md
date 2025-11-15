@@ -4,53 +4,37 @@
 
 > - ReactJS
 > - Tailwind CSS
-> - Dexie.js
+> - Dexie.js (legacy/local, being replaced by backend)
+> - Laravel backend (API + authentication)
 
-### this is a project where i am learning tailwind css and some more react skills
+### About
 
-#### Current hours spent on this project: [![wakatime](https://wakatime.com/badge/user/86a552fc-d0f8-4683-b1f8-6319e690ff78/project/7d042cc3-169a-4aca-9c6f-e407b54df603.svg)](https://wakatime.com/badge/user/86a552fc-d0f8-4683-b1f8-6319e690ff78/project/7d042cc3-169a-4aca-9c6f-e407b54df603)
+Skivio is a KanBan board project where I am learning Tailwind CSS, React skills, and building a full-stack app with Laravel for backend functionality and authentication.
 
-### Todo
+<!-- #### Current hours spent on this project: -->
 
-`[ 0 ] = todo`
-
-`[ i ] = in progress`
-
-`[ x ] = done`
-
-`[ ! ] = important / priority`
-
-`[ # ] = bug`
+<!-- [![wakatime](https://wakatime.com/badge/user/86a552fc-d0f8-4683-b1f8-6319e690ff78/project/7d042cc3-169a-4aca-9c6f-e407b54df603.svg)](https://wakatime.com/badge/user/86a552fc-d0f8-4683-b1f8-6319e690ff78/project/7d042cc3-169a-4aca-9c6f-e407b54df603) -->
 
 ---
 
-- [ i ] add input validation
-- [ 0 ] link labels to task incase label gets deleted it also gets deleted in the task.labels array
-- [ 0 ] fix styling
-- [ 0 ] style task cards
-- [ 0 ] add background
-- [ 0 ] link add task button to status so status is already filled in and use doesnt have to choose (user can still choose incase they miss clicked)
-- [ 0 ] Adding different themes to it (color schemes)
-- [ 0 ] ...
+## Features
 
-### done
+### Current Features
 
-- [ x ] render projects in dropdown menu nav bar
-- [ x ] add feature for adding project
-- [ x ] filter tasks on project
-- [ x ] add filtering
-- [ x ] add data to db when rendering boardly if db is empty
-- [ x ] render labels from db instead of hard coded
-- [ x ] drag and drop tasks
-- [ x ] choose first project when rendering boardly
-- [ x ] change add project button to dropdown (add, edit, delete) with headless ui (not select)
-- [ x ] add edit project feature
-- [ x ] add delete project feature
-- [ x ] add feature deleting task, labels, projects
-- [ x ] add feature for adding labels
-- [ x ] change add label button to dropdown (add, manage) with headless ui (not select)
-- [ x ] add editing task
-- [ x ] add labels when editing task
-- [ x ] edit description when editing tasks
-- [ x ] add date to task
-- [ x ] add due date to task
+- Create, edit, and delete tasks
+- Move tasks between statuses (Backlog, To Do, In Progress, Testing, Done)
+- Create and manage multiple projects (boards)
+- Add labels to tasks and create your own labels
+- Dark mode
+
+### Planned / Future Features
+
+- API for frontend/backend communication
+- User registration and login (Laravel Sanctum authentication)
+- Real-time updates (shared boards for teams)
+- Invite users to projects/boards
+- Assign tasks to users
+- Notifications for task updates and assignments
+- Drag-and-drop task reordering (positioning)
+- Advanced filtering and sorting of tasks
+- Analytics/dashboard for projects
