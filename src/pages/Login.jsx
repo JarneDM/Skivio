@@ -6,13 +6,26 @@ function Login() {
   const { login, setUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // still need to send data to the backend nd validate credentials
-    //this is just for demo purposes
-    const demoUser = { username: "demo", email: "demo@example.com" };
-    setUser(demoUser);
-    login(demoUser);
+
+    const res = await fetch("https://task-manager.ddev.site/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: e.target.email.value,
+        password: e.target.password.value,
+      }),
+    });
+
+    const user = await res.json();
+    localStorage.setItem("auth_token", user.token);
+    console.log("Logged in user:", user);
+    console.log("token:", user.token);
+    setUser(user);
+    login(user.user.username);
 
     navigate("/");
   };

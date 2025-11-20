@@ -5,7 +5,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     try {
-      return !!localStorage.getItem("boardly_user");
+      return !!localStorage.getItem("skivio_user");
     } catch {
       return false;
     }
@@ -13,7 +13,7 @@ export function AuthProvider({ children }) {
 
   const [user, setUser] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem("boardly_user")) || { email: "", username: "" };
+      return JSON.parse(localStorage.getItem("skivio_user")) || { email: "", username: "" };
     } catch {
       return { email: "", username: "" };
     }
@@ -22,9 +22,9 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     try {
       if (isLoggedIn && user && Object.keys(user).length) {
-        localStorage.setItem("boardly_user", JSON.stringify(user));
+        localStorage.setItem("skivio_user", JSON.stringify(user));
       } else {
-        localStorage.removeItem("boardly_user");
+        localStorage.removeItem("skivio_user");
       }
     } catch (err) {
       console.warn("AuthContext: localStorage unavailable", err);
@@ -38,6 +38,8 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     setUser({ email: "", username: "" });
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("skivio_user");
     setIsLoggedIn(false);
   };
 

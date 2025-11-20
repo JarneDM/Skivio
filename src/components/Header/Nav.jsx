@@ -1,12 +1,24 @@
-import React from "react";
+import React, { useContext } from "react";
 import AddTask from "../Tasks/AddTask.jsx";
 import Projects from "../Projects/Projects.jsx";
 import ProjectOptions from "../Projects/ProjectOptions.jsx";
 import AddLabel from "../Labels/AddLabel.jsx";
 import ToggleDark from "./ToggleDark.jsx";
 import Skivio from "../../assets/skivio-logo-nobg.png";
+import AuthContext from "../../contexts/AuthContext.jsx";
 
 function Nav({ selectedProject, setSelectedProject, search, setSearch }) {
+  const { logout } = useContext(AuthContext);
+
+  const handleLogout = async () => {
+    // await fetch("https://task-manager.ddev.site/api/logout", {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //   },
+    // });
+    logout();
+  };
   return (
     <>
       <div className="w-full flex items-center justify-between p-4 bg-blue-600">
@@ -25,6 +37,8 @@ function Nav({ selectedProject, setSelectedProject, search, setSearch }) {
             type="text"
           />
         </div>
+
+        <button onClick={handleLogout}>Logout</button>
 
         <div className="flex items-center space-x-5">
           <AddLabel />
