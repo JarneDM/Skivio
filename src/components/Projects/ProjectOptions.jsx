@@ -3,8 +3,10 @@ import { db } from "../../db.js";
 import { Menu, MenuButton, MenuItems, MenuItem, MenuSeparator } from "@headlessui/react";
 import { ChevronDown } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
+import { useProject } from "../../contexts/ProjectContext.jsx";
 
-function ProjectOptions({ selectedProject, setSelectedProject }) {
+function ProjectOptions() {
+  const { selectedProject, setSelectedProject } = useProject();
   const [name, setName] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -116,7 +118,7 @@ function ProjectOptions({ selectedProject, setSelectedProject }) {
 
       {showDelete && (
         <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 z-50">
-          <div className="space-y-2 bg-white shadow-md p-6 rounded-md shadow-md w-96 relative">
+          <div className="space-y-2 bg-white p-6 rounded-md shadow-md w-96 relative">
             <p className="text-lg text-center">
               Are you sure you want to delete <b>{selectedProject.name}</b>
             </p>

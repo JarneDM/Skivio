@@ -25,7 +25,7 @@ function Login() {
     console.log("Logged in user:", user);
     console.log("token:", user.token);
     setUser(user);
-    login(user.user.username);
+    login(user.user);
 
     navigate("/");
   };

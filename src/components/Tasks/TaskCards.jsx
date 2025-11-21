@@ -1,29 +1,69 @@
-import React, { useState } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
+import React, { useContext, useEffect, useState } from "react";
 import { db } from "../../db.js";
 import { Draggable } from "@hello-pangea/dnd";
-// import bin from "../assets/bin.png";
 import { Trash, SquarePen } from "lucide-react";
 import EditTask from "./EditTask.jsx";
+import { useProject } from "../../contexts/ProjectContext.jsx";
+import AuthContext from "../../contexts/AuthContext.jsx";
 
-function TaskCards({ statusClasses, status, selectedProject, search, setDueDate, dueDate }) {
+function TaskCards({ statusColor, status, search, setDueDate, dueDate }) {
   const [selectedTask, setSelectedTask] = useState(null);
   const [showDelete, setShowDelete] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [tasks, setTasks] = useState([]);
+
+  const { selectedProject } = useProject();
+  const { user } = useContext(AuthContext);
 
   const today = new Date();
 
-  const tasks = useLiveQuery(() => {
-    if (!status) return [];
+  const fetchTasks = async () => {
+    const url = new URL("https://task-manager.ddev.site/api/tasks");
+    if (selectedProject) url.searchParams.append("project_id", String(selectedProject.id ?? selectedProject));
+    if (user) url.searchParams.append("user_id", String(user.id));
 
-    if (!selectedProject) {
-      // if no project is selected, show all tasks
-      return db.tasks.where("status").equals(status).toArray();
+    const res = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+      },
+    });
+
+    // read body as text first so we can handle HTML error pages or non-JSON responses
+    const raw = await res.text();
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      data = raw;
     }
 
-    // if a project is selected, show tasks of status and project
-    return db.tasks.where("[status+projectId]").equals([status, selectedProject]).toArray();
-  }, [status, selectedProject]);
+    if (!res.ok) {
+      console.error("Tasks API returned error:", res.status, data);
+      setTasks([]);
+      return;
+    }
+
+    if (!Array.isArray(data)) {
+      console.warn("Tasks API returned non-array response; expected array.", data);
+      setTasks([]);
+      return;
+    }
+
+    // filter client-side as a fallback in case API doesnt filter
+    const filteredData = data.filter((task) => {
+      const byStatus = task.status_id === (status?.id ?? status);
+      const byProject = selectedProject ? String(task.project_id) === String(selectedProject.id ?? selectedProject) : true;
+      return byStatus && byProject;
+    });
+    setTasks(filteredData);
+  };
+
+  useEffect(() => {
+    fetchTasks();
+  }, [selectedProject, status?.id]);
 
   const openDeleteTask = (task) => {
     try {
@@ -75,10 +115,10 @@ function TaskCards({ statusClasses, status, selectedProject, search, setDueDate,
   return (
     <div className="space-y-2 w-full">
       {filtered.length === 0 ? (
-        <p className={`text-center bg-white rounded-lg ${statusClasses}`}></p>
+        <p className="text-center rounded-lg" style={{ backgroundColor: statusColor }}></p>
       ) : (
         filtered.map((task, index) => {
-          const taskDate = task.duedate ? new Date(task.duedate) : today;
+          const taskDate = task.due_date ? new Date(task.due_date) : today;
           const isDueToday = isSameDay(taskDate, today);
 
           return (
@@ -115,9 +155,9 @@ function TaskCards({ statusClasses, status, selectedProject, search, setDueDate,
                     <p
                       className={`text-[0.6rem] absolute right-2 bottom-2 font-bold shadow-sm dark:text-black ${
                         isDueToday ? "bg-red-500" : "bg-gray-200"
-                      } ${task.duedate ? "" : "hidden"} shadow-black p-[0.2rem] rounded-sm`}
+                      } ${task.due_date ? "" : "hidden"} shadow-black p-[0.2rem] rounded-sm`}
                     >
-                      {task.duedate ? `Due: ${new Date(task.duedate).toLocaleDateString()}` : null}
+                      {task.due_date ? `Due: ${new Date(task.due_date).toLocaleDateString()}` : null}
                     </p>
                   </div>
 
@@ -148,21 +188,18 @@ function TaskCards({ statusClasses, status, selectedProject, search, setDueDate,
 
       {showDelete && (
         <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 z-50">
-          <div className="space-y-2 bg-white shadow-md p-6 rounded-md shadow-md w-96 relative">
+          <div className="space-y-2 bg-white shadow-md p-6 rounded-md w-96 relative">
             <p className="text-lg text-center">
               Are you sure you want to delete <b>{selectedTask.name}</b>
             </p>
             <div className="flex justify-center items-center space-x-4">
               <button
                 onClick={() => setShowDelete(false)}
-                className="cursor-pointer p-2 bg-gray-200 hover:bg-gray-300 text-black rounded-md hover:bg-blue-700 w-full"
+                className="cursor-pointer p-2 bg-gray-200 hover:bg-gray-300 text-black rounded-md w-full"
               >
                 Cancel
               </button>
-              <button
-                onClick={deleteTask}
-                className="cursor-pointer p-2 bg-red-500 hover:bg-red-700 text-white rounded-md hover:bg-blue-700 w-full"
-              >
+              <button onClick={deleteTask} className="cursor-pointer p-2 bg-red-500 hover:bg-red-700 text-white rounded-md w-full">
                 Delete
               </button>
             </div>
