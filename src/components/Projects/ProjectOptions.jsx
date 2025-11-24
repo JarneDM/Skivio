@@ -125,14 +125,11 @@ function ProjectOptions() {
             <div className="flex justify-center items-center space-x-4">
               <button
                 onClick={() => setShowDelete(false)}
-                className="cursor-pointer p-2 bg-gray-200 hover:bg-gray-300 text-black rounded-md hover:bg-blue-700 w-full"
+                className="cursor-pointer p-2 bg-gray-200 text-black rounded-md hover:bg-blue-700 w-full"
               >
                 Cancel
               </button>
-              <button
-                onClick={handleDeleteProject}
-                className="cursor-pointer p-2 bg-red-500 hover:bg-red-700 text-white rounded-md hover:bg-blue-700 w-full"
-              >
+              <button onClick={handleDeleteProject} className="cursor-pointer p-2 bg-red-500 text-white rounded-md hover:bg-red-700 w-full">
                 Delete
               </button>
             </div>

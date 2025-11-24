@@ -138,7 +138,7 @@ function EditTask({ selectedTask, setSelectedTask, setShowEdit, dueDate, setDueD
             </Listbox>
           </div>
           {/* labels */}
-          <div className="bg-gray-200 flex-auto h-auto text-center shadow-md p-2 w-auto h-10 rounded-md space-y-2 ">
+          <div className="bg-gray-200 flex-auto h-auto text-center shadow-md p-2 w-auto min-h-10 rounded-md space-y-2 ">
             {selectedTask.labels?.map((label) => (
               <div key={label.id} className="flex-auto space-x-2 h-auto w-max ">
                 <div className="flex justify-start text-base w-auto items-center bg-blue-200 text-blue-700 rounded-md p-1 shadow-md space-x-2">
@@ -153,14 +153,11 @@ function EditTask({ selectedTask, setSelectedTask, setShowEdit, dueDate, setDueD
           <div className="flex justify-center items-center space-x-2">
             <button
               onClick={() => setShowEdit(false)}
-              className="cursor-pointer p-2 bg-gray-200 hover:bg-gray-300 text-black rounded-md hover:bg-blue-700 w-full"
+              className="cursor-pointer p-2 bg-gray-200 text-black rounded-md hover:bg-blue-700 w-full"
             >
               Close
             </button>
-            <button
-              onClick={handleTaskEdit}
-              className="cursor-pointer p-2 bg-blue-500 hover:bg-blue-300 text-white rounded-md hover:bg-blue-700 w-full"
-            >
+            <button onClick={handleTaskEdit} className="cursor-pointer p-2 bg-blue-500 text-white rounded-md hover:bg-blue-700 w-full">
               Edit
             </button>
           </div>
