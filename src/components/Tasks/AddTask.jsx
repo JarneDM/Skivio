@@ -2,6 +2,7 @@ import React, { useContext, useState } from "react";
 import { Listbox } from "@headlessui/react";
 import { Check, ChevronDown, ChevronRight } from "lucide-react";
 import AuthContext from "../../contexts/AuthContext.jsx";
+// import { useEffect } from "react";
 
 function AddTask({ statusColor, dueDate, setDueDate, chosenStatus, selectedProject }) {
   const [title, setTitle] = useState("");
@@ -14,11 +15,31 @@ function AddTask({ statusColor, dueDate, setDueDate, chosenStatus, selectedProje
   const [projects, setProjects] = useState([]);
   const [statuses, setStatuses] = useState([]);
   const [labelsArr, setLabelsArr] = useState([]);
+  const [tasks, setTasks] = useState([]);
 
   const { user } = useContext(AuthContext);
   // const [dueDate, setDueDate] = useState("");
 
-  // const defaultLabels = ["Urgent", "Low Priority", "Bug", "Feature", "School", "Personal"];
+  const filteredTasks = tasks.filter((t) => {
+    return t.status_id === (status?.id ?? chosenStatus?.id) && (selectedProject ? t.project_id === selectedProject.id : true);
+  });
+
+  const fetchTasks = async () => {
+    try {
+      const response = await fetch("https://task-manager.ddev.site/api/tasks", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+      });
+      const data = await response.json();
+      setTasks(data);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+    }
+  };
+
   const fetchStatuses = async () => {
     try {
       const response = await fetch("https://task-manager.ddev.site/api/statuses", {
@@ -76,6 +97,7 @@ function AddTask({ statusColor, dueDate, setDueDate, chosenStatus, selectedProje
     fetchProjects();
     fetchStatuses();
     fetchLabels();
+    fetchTasks();
   }, []);
 
   const handleAddTask = async () => {
@@ -91,19 +113,19 @@ function AddTask({ statusColor, dueDate, setDueDate, chosenStatus, selectedProje
         return;
       }
 
-      // Normalize payload: send IDs for labels and ensure due_date is ISO string if provided
+      const pos = filteredTasks.length > 1 ? filteredTasks.length - 1 : 0;
+
       const payload = {
         title,
         description,
         status_id: status.id,
         labels: Array.isArray(labels) ? labels.map((l) => l && (l.id ?? l)) : [],
         project_id: projectId ?? null,
-        // send the date input's YYYY-MM-DD string (no timezone) to avoid DB datetime format issues
+        position: pos,
         due_date: dueDate ? dueDate : null,
         assigned_to: user.id,
       };
 
-      // Remove null/undefined fields that the API may not expect
       Object.keys(payload).forEach((k) => {
         if (payload[k] === null || payload[k] === undefined) delete payload[k];
       });
@@ -118,22 +140,23 @@ function AddTask({ statusColor, dueDate, setDueDate, chosenStatus, selectedProje
         },
         body: JSON.stringify(payload),
       });
+      fetchTasks();
 
-      if (!resp.ok) {
-        // Read the response body once (text), then try to parse JSON from it.
-        let errBody = null;
-        const raw = await resp.text();
-        try {
-          errBody = JSON.parse(raw);
-        } catch {
-          errBody = raw;
-        }
-        console.error("Server returned error when creating task:", resp.status, errBody);
-        alert(`Failed to create task: ${resp.status} ${typeof errBody === "string" ? errBody : JSON.stringify(errBody)}`);
-        return;
+      // parse created task (if API returns it)
+      let created = null;
+      try {
+        created = await resp.json();
+      } catch (err) {
+        console.error("Failed to parse created task JSON:", err);
+        created = null;
       }
 
-      // Success
+      try {
+        window.dispatchEvent(new CustomEvent("tasksUpdated", { detail: created }));
+      } catch (err) {
+        console.error("Failed to dispatch tasksUpdated event:", err);
+      }
+
       setTitle("");
       setDescription("");
       setProjectId(null);
@@ -146,30 +169,6 @@ function AddTask({ statusColor, dueDate, setDueDate, chosenStatus, selectedProje
       alert("Failed to add task — see console for details.");
     }
   };
-
-  // When opening the overlay, ensure we have a sensible default status selected
-  React.useEffect(() => {
-    if (showOverlay && (status === null || status === undefined)) {
-      // Prefer chosenStatus (try to normalize to a status object), otherwise first fetched status
-      if (chosenStatus) {
-        // If chosenStatus is an object with id, use it. If it's a string, try to find matching status by name or id.
-        if (typeof chosenStatus === "object" && chosenStatus !== null && (chosenStatus.id || chosenStatus.name)) {
-          setStatus(chosenStatus);
-        } else if (typeof chosenStatus === "string") {
-          const match = statuses.find((s) => s.name === chosenStatus || String(s.id) === chosenStatus);
-          if (match) setStatus(match);
-          else if (statuses && statuses.length > 0) setStatus(statuses[0]);
-          else setStatus(null);
-        } else {
-          setStatus(chosenStatus);
-        }
-      } else if (statuses && statuses.length > 0) {
-        setStatus(statuses[0]);
-      }
-    }
-    // Intentionally exclude `status` from deps so effect runs when overlay opens or statuses/chosenStatus change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showOverlay, chosenStatus, statuses]);
 
   return (
     <>

@@ -1,7 +1,7 @@
 import React from "react";
 import Status from "./Status.jsx";
 import { DragDropContext } from "@hello-pangea/dnd";
-import { db } from "../../db.js";
+// import { db } from "../../db.js";
 import { useState } from "react";
 
 function Board({ search }) {
@@ -29,14 +29,97 @@ function Board({ search }) {
     const { destination, source, draggableId } = result;
 
     if (!destination) return;
-    if (destination.droppableId === source.droppableId && destination.index === source.index) {
+
+    if (destination.droppableId === source.droppableId) {
+      if (destination.index === source.index) return;
+      const reorderDetail = {
+        reorder: true,
+        id: Number(draggableId),
+        status_id: destination.droppableId,
+        fromIndex: source.index,
+        toIndex: destination.index,
+      };
+
+      try {
+        window.dispatchEvent(new CustomEvent("tasksUpdated", { detail: reorderDetail }));
+      } catch (e) {
+        void e;
+      }
+
+      (async () => {
+        try {
+          const res = await fetch(`https://task-manager.ddev.site/api/tasks/${draggableId}`, {
+            method: "PUT",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+            },
+            body: JSON.stringify({ position: destination.index, status_id: destination.droppableId }),
+          });
+
+          if (!res.ok) {
+            // fallback: ask clients to refetch full lists
+            window.dispatchEvent(new CustomEvent("tasksUpdated"));
+            return;
+          }
+
+          try {
+            const updatedTask = await res.json();
+            if (updatedTask && updatedTask.id) {
+              window.dispatchEvent(new CustomEvent("tasksUpdated", { detail: updatedTask }));
+            }
+          } catch {
+            // ignore JSON parse errors; UI already updated optimistically
+          }
+        } catch (err) {
+          console.error("Failed to persist reordered position:", err);
+          // fallback to full refetch
+          window.dispatchEvent(new CustomEvent("tasksUpdated"));
+        }
+      })();
+
       return;
     }
 
-    await db.tasks.update(Number(draggableId), {
-      status: destination.droppableId,
-    });
-    console.log(`Move task ${draggableId} from ${source.droppableId} to ${destination.droppableId}`);
+    // await db.tasks.update(Number(draggableId), {
+    //   status: destination.droppableId,
+    // });
+
+    try {
+      const res = await fetch(`https://task-manager.ddev.site/api/tasks/${draggableId}`, {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+        body: JSON.stringify({ status_id: destination.droppableId }),
+      });
+
+      console.log(`Move task ${draggableId} from ${source.droppableId} to ${destination.droppableId}`);
+
+      // Try to parse the updated task object from the response. If unavailable, dispatch minimal detail.
+      try {
+        const updatedTask = await res.json();
+        if (updatedTask && updatedTask.id) {
+          window.dispatchEvent(new CustomEvent("tasksUpdated", { detail: updatedTask }));
+        } else {
+          const updated = { id: Number(draggableId), status_id: destination.droppableId };
+          window.dispatchEvent(new CustomEvent("tasksUpdated", { detail: updated }));
+        }
+      } catch {
+        // If JSON parse fails, fallback to minimal dispatch
+        const updated = { id: Number(draggableId), status_id: destination.droppableId };
+        try {
+          window.dispatchEvent(new CustomEvent("tasksUpdated", { detail: updated }));
+        } catch (e) {
+          void e;
+        }
+      }
+    } catch (error) {
+      console.error("Failed to update task status:", error);
+    }
   };
 
   return (

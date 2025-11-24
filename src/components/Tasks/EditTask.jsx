@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { db } from "../../db.js";
+import React, { useEffect, useState } from "react";
+// import { db } from "../../db.js";
 import { Trash } from "lucide-react";
-import { useLiveQuery } from "dexie-react-hooks";
+// import { useLiveQuery } from "dexie-react-hooks";
 import { Listbox } from "@headlessui/react";
 import { Check, ChevronDown, ChevronRight } from "lucide-react";
 
@@ -9,16 +9,38 @@ function EditTask({ selectedTask, setSelectedTask, setShowEdit, dueDate, setDueD
   const [newName, setNewName] = useState(selectedTask.title);
   const [newDescription, setNewDescription] = useState(selectedTask.description);
   const [newLabels, setNewLabels] = useState([]);
+  const [labelsArr, setLabelsArr] = useState([]);
   // const [taskLabels, setTaskLabels] = useState([]);
 
-  const labelsArr = useLiveQuery(() => db.labels.toArray(), []);
-  const taskLabels = labelsArr?.filter((l) => !selectedTask.labels.some((sl) => sl.id === l.id)) || [];
+  // const labelsArr = useLiveQuery(() => db.labels.toArray(), []);
+  const fetchLabels = async () => {
+    const res = await fetch("https://task-manager.ddev.site/api/labels", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+      },
+    });
+    const data = await res.json();
+    setLabelsArr(data);
+  };
+  useEffect(() => {
+    fetchLabels();
+  }, []);
+  const taskLabels = labelsArr?.filter((l) => !(selectedTask?.labels ?? []).some((sl) => sl.id === l.id)) || [];
 
   const handleAddLabels = async () => {
     try {
-      const updatedLabels = [...selectedTask.labels, ...newLabels];
+      const updatedLabels = [...(selectedTask.labels ?? []), ...newLabels];
 
-      await db.tasks.update(selectedTask.id, { labels: updatedLabels });
+      // await db.tasks.update(selectedTask.id, { labels: updatedLabels });
+      await fetch(`https://task-manager.ddev.site/api/tasks/${selectedTask.id}/labels`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+        body: JSON.stringify({ labels: newLabels }),
+      });
 
       setSelectedTask({
         ...selectedTask,
@@ -40,7 +62,15 @@ function EditTask({ selectedTask, setSelectedTask, setShowEdit, dueDate, setDueD
       if (newDescription !== selectedTask.description) updates.description = newDescription;
 
       if (Object.keys(updates).length > 0) {
-        await db.tasks.update(selectedTask.id, updates);
+        // await db.tasks.update(selectedTask.id, updates);
+        await fetch(`https://task-manager.ddev.site/api/tasks/${selectedTask.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+          },
+          body: JSON.stringify(updates),
+        });
         setSelectedTask({ ...selectedTask, ...updates });
       }
 
@@ -57,9 +87,16 @@ function EditTask({ selectedTask, setSelectedTask, setShowEdit, dueDate, setDueD
   const deleteTaskLabel = async (label) => {
     try {
       // filter out by id (safe since labels are objects)
-      const updatedLabels = selectedTask.labels.filter((l) => l.id !== label.id);
+      const updatedLabels = (selectedTask.labels ?? []).filter((l) => l.id !== label.id);
 
-      await db.tasks.update(selectedTask.id, { labels: updatedLabels });
+      // await db.tasks.update(selectedTask.id, { labels: updatedLabels });
+      await fetch(`https://task-manager.ddev.site/api/tasks/${selectedTask.id}/labels/${label.id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+      });
 
       setSelectedTask({
         ...selectedTask,
