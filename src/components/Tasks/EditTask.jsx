@@ -17,6 +17,7 @@ function EditTask({ selectedTask, setSelectedTask, setShowEdit, dueDate, setDueD
     const res = await fetch("https://task-manager.ddev.site/api/labels", {
       method: "GET",
       headers: {
+        Accept: "application/json",
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
       },
     });
@@ -37,9 +38,11 @@ function EditTask({ selectedTask, setSelectedTask, setShowEdit, dueDate, setDueD
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Accept: "application/json",
           Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
         },
-        body: JSON.stringify({ labels: newLabels }),
+        // send label ids array
+        body: JSON.stringify({ labels: newLabels.map((l) => l.id ?? l) }),
       });
 
       setSelectedTask({
@@ -94,6 +97,7 @@ function EditTask({ selectedTask, setSelectedTask, setShowEdit, dueDate, setDueD
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
+          Accept: "application/json",
           Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
         },
       });

@@ -1,13 +1,29 @@
-import { useLiveQuery } from "dexie-react-hooks";
+// import { useLiveQuery } from "dexie-react-hooks";
 import { Trash, SquarePen } from "lucide-react";
 import React, { useState } from "react";
-import { db } from "../../db.js";
+// import { db } from "../../db.js";
 
 function ManageLabels({ labelName, setLabelName, setShowManage }) {
-  const labels = useLiveQuery(() => db.labels.toArray(), []);
+  // const labels = useLiveQuery(() => db.labels.toArray(), []);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [selectedLabel, setSelectedLabel] = useState(null);
+  const [labels, setLabels] = useState([]);
+
+  const fetchLabels = async () => {
+    const res = await fetch("https://task-manager.ddev.site/api/labels", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+      },
+    });
+    const data = await res.json();
+    setLabels(data);
+  };
+
+  React.useEffect(() => {
+    fetchLabels();
+  }, []);
 
   const openDelete = (label) => {
     try {
@@ -29,10 +45,18 @@ function ManageLabels({ labelName, setLabelName, setShowManage }) {
 
   const handleEditLabel = async () => {
     try {
-      await db.labels.where("id").equals(selectedLabel.id).update({ name: labelName });
+      await fetch(`https://task-manager.ddev.site/api/labels/${selectedLabel.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+        body: JSON.stringify({ name: labelName }),
+      });
       setLabelName("");
       setShowEdit(false);
       setShowManage(false);
+      fetchLabels();
     } catch (err) {
       console.error(err);
     }
@@ -40,9 +64,15 @@ function ManageLabels({ labelName, setLabelName, setShowManage }) {
 
   const handleDeleteLabel = async () => {
     try {
-      await db.labels.where("id").equals(selectedLabel.id).delete();
+      await fetch(`https://task-manager.ddev.site/api/labels/${selectedLabel.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+      });
       setShowDelete(false);
       setShowManage(false);
+      fetchLabels();
     } catch (err) {
       console.error(err);
     }
@@ -74,7 +104,7 @@ function ManageLabels({ labelName, setLabelName, setShowManage }) {
           </div>
           <button
             onClick={() => setShowManage(false)}
-            className="cursor-pointer p-2 bg-gray-200 hover:bg-gray-300 text-black rounded-md hover:bg-blue-700 w-full"
+            className="cursor-pointer p-2 bg-gray-200 text-black rounded-md hover:bg-blue-700 w-full"
           >
             Close
           </button>
@@ -103,21 +133,18 @@ function ManageLabels({ labelName, setLabelName, setShowManage }) {
 
       {showDelete && (
         <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 z-50">
-          <div className="space-y-2 bg-white shadow-md p-6 rounded-md shadow-md w-96 relative">
+          <div className="space-y-2 bg-white p-6 rounded-md shadow-md w-96 relative">
             <p className="text-lg text-center">
               Are you sure you want to delete <b>{selectedLabel.name}</b>
             </p>
             <div className="flex justify-center items-center space-x-4">
               <button
                 onClick={() => setShowDelete(false)}
-                className="cursor-pointer p-2 bg-gray-200 hover:bg-gray-300 text-black rounded-md hover:bg-blue-700 w-full"
+                className="cursor-pointer p-2 bg-gray-200 text-black rounded-md hover:bg-blue-700 w-full"
               >
                 Cancel
               </button>
-              <button
-                onClick={handleDeleteLabel}
-                className="cursor-pointer p-2 bg-red-500 hover:bg-red-700 text-white rounded-md hover:bg-blue-700 w-full"
-              >
+              <button onClick={handleDeleteLabel} className="cursor-pointer p-2 bg-red-500 text-white rounded-md hover:bg-red-700 w-full">
                 Delete
               </button>
             </div>

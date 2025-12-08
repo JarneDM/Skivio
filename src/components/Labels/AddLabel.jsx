@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { db } from "../../db.js";
 import AddTask from "../Tasks/AddTask.jsx";
 import ManageLabels from "./ManageLabels.jsx";
 import { Menu, MenuButton, MenuItems, MenuItem, MenuSeparator } from "@headlessui/react";
@@ -12,7 +11,14 @@ function AddLabel() {
 
   const handleAddLabel = async () => {
     try {
-      await db.labels.add({ name: labelName });
+      await fetch("https://task-manager.ddev.site/api/labels", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+        body: JSON.stringify({ name: labelName }),
+      });
       setLabelName("");
       setShowAdd(false);
     } catch (err) {
