@@ -30,6 +30,11 @@ function Projects() {
       }
     }
     if (!selectedProject && projects?.length) setSelectedProject(projects[0]);
+    window.addEventListener("projectsUpdated", fetchProjects);
+    return () => {
+      window.removeEventListener("projectsUpdated", fetchProjects);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects, selectedProject]);
 
   if (!projects) return <div>Loading projects...</div>;

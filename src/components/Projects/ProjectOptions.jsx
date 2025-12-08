@@ -1,9 +1,11 @@
-import React, { useState } from "react";
-import { db } from "../../db.js";
+import React, { useEffect, useState, useContext } from "react";
+// import { db } from "../../db.js";
 import { Menu, MenuButton, MenuItems, MenuItem, MenuSeparator } from "@headlessui/react";
 import { ChevronDown } from "lucide-react";
-import { useLiveQuery } from "dexie-react-hooks";
+// import { useLiveQuery } from "dexie-react-hooks";
 import { useProject } from "../../contexts/ProjectContext.jsx";
+// import { useContext } from "react";
+import AuthContext from "../../contexts/AuthContext.jsx";
 
 function ProjectOptions() {
   const { selectedProject, setSelectedProject } = useProject();
@@ -11,14 +13,38 @@ function ProjectOptions() {
   const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [projects, setProjects] = useState([]);
 
-  const projects = useLiveQuery(() => db.projects.toArray(), []);
+  const { user } = useContext(AuthContext);
+
+  const fetchProjects = async () => {
+    const res = await fetch("https://task-manager.ddev.site/api/projects", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+      },
+    });
+    const data = await res.json();
+    setProjects(data);
+  };
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
   const handleAddProject = async () => {
     try {
-      await db.projects.add({ name });
+      await fetch("https://task-manager.ddev.site/api/projects", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+        body: JSON.stringify({ name, user_id: user.id }),
+      });
       setName("");
       setShowAdd(false);
+      fetchProjects();
+      window.dispatchEvent(new CustomEvent("projectsUpdated", { detail: { projectAdded: true } }));
     } catch (err) {
       console.error(err);
     }
@@ -26,9 +52,18 @@ function ProjectOptions() {
 
   const handleEditProject = async () => {
     try {
-      await db.projects.update(selectedProject.id, { name });
+      await fetch(`https://task-manager.ddev.site/api/projects/${selectedProject.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+        body: JSON.stringify({ name }),
+      });
       setName("");
       setShowEdit(false);
+      fetchProjects();
+      window.dispatchEvent(new CustomEvent("projectsUpdated", { detail: { projectEdited: true } }));
     } catch (err) {
       console.error(err);
     }
@@ -36,10 +71,16 @@ function ProjectOptions() {
 
   const handleDeleteProject = async () => {
     try {
-      await db.projects.delete(selectedProject.id);
-      await db.tasks.where("projectId").equals(selectedProject.id).delete();
+      await fetch(`https://task-manager.ddev.site/api/projects/${selectedProject.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+      });
       setSelectedProject(projects[0]);
       setShowDelete(false);
+      fetchProjects();
+      window.dispatchEvent(new CustomEvent("projectsUpdated", { detail: { projectDeleted: true } }));
     } catch (err) {
       console.error(err);
     }

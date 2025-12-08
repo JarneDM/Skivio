@@ -31,24 +31,24 @@ function EditTask({ selectedTask, setSelectedTask, setShowEdit, dueDate, setDueD
 
   const handleAddLabels = async () => {
     try {
-      const updatedLabels = [...(selectedTask.labels ?? []), ...newLabels];
-
-      // await db.tasks.update(selectedTask.id, { labels: updatedLabels });
-      await fetch(`https://task-manager.ddev.site/api/tasks/${selectedTask.id}/labels`, {
+      const res = await fetch(`https://task-manager.ddev.site/api/tasks/${selectedTask.id}/labels`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
           Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
         },
-        // send label ids array
         body: JSON.stringify({ labels: newLabels.map((l) => l.id ?? l) }),
       });
 
-      setSelectedTask({
-        ...selectedTask,
-        labels: updatedLabels,
-      });
+      if (res.ok) {
+        const data = await res.json();
+        const updatedLabels = data.labels || [...(selectedTask.labels ?? []), ...newLabels];
+        setSelectedTask({
+          ...selectedTask,
+          labels: updatedLabels,
+        });
+      }
 
       setNewLabels([]);
     } catch (err) {
@@ -79,6 +79,21 @@ function EditTask({ selectedTask, setSelectedTask, setShowEdit, dueDate, setDueD
 
       if (newLabels.length > 0) {
         await handleAddLabels();
+      }
+
+      try {
+        const res = await fetch(`https://task-manager.ddev.site/api/tasks/${selectedTask.id}`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+          },
+        });
+        if (res.ok) {
+          const updatedTask = await res.json();
+          window.dispatchEvent(new CustomEvent("tasksUpdated", { detail: updatedTask }));
+        }
+      } catch (err) {
+        console.error("Failed to fetch updated task:", err);
       }
 
       setShowEdit(false);

@@ -91,6 +91,10 @@ function AddTask({ statusColor, dueDate, setDueDate, chosenStatus, selectedProje
         console.error("Error fetching projects:", error);
         return [];
       });
+    window.addEventListener("projectsUpdated", fetchProjects);
+    return () => {
+      window.removeEventListener("projectsUpdated", fetchProjects);
+    };
   };
 
   React.useEffect(() => {
@@ -151,12 +155,6 @@ function AddTask({ statusColor, dueDate, setDueDate, chosenStatus, selectedProje
         created = null;
       }
 
-      try {
-        window.dispatchEvent(new CustomEvent("tasksUpdated", { detail: created }));
-      } catch (err) {
-        console.error("Failed to dispatch tasksUpdated event:", err);
-      }
-
       setTitle("");
       setDescription("");
       setProjectId(null);
@@ -164,6 +162,7 @@ function AddTask({ statusColor, dueDate, setDueDate, chosenStatus, selectedProje
       setLabels([]);
       setDueDate("");
       setShowOverlay(false);
+      window.dispatchEvent(new CustomEvent("tasksUpdated", { detail: created }));
     } catch (err) {
       console.error("Failed to add task (network/error):", err);
       alert("Failed to add task — see console for details.");

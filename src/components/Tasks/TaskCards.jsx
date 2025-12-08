@@ -98,29 +98,17 @@ function TaskCards({ statusColor, status, search, setDueDate, dueDate }) {
         if (String(detail.toStatus) === String(myStatusId)) {
           let task = detail.task;
           if (!task) {
-            try {
-              const res = await fetch(`https://task-manager.ddev.site/api/tasks/${detail.id}`, {
-                headers: {
-                  Accept: "application/json",
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-                },
-              });
-              if (res.ok) {
-                const fetched = await res.json();
-                // project guard
-                if (!selectedProject || String(fetched.project_id) === String(selectedProject.id ?? selectedProject)) {
-                  task = fetched;
-                }
-              }
-            } catch (err) {
-              console.error("Failed to fetch task for move:", err);
-            }
+            // fetch task if we don't have it (cross-column move from different project/status)
+            return fetchTasks();
           }
 
           if (task) {
             task.position = detail.toIndex;
-            setTasks((prev) => insertAtPosition(prev, task));
+            setTasks((prev) => {
+              const copy = prev.filter((t) => t.id !== task.id);
+              copy.splice(detail.toIndex, 0, task);
+              return copy;
+            });
           }
         }
 
@@ -130,7 +118,20 @@ function TaskCards({ statusColor, status, search, setDueDate, dueDate }) {
         const task = detail;
 
         if (String(task.status_id) === String(myStatusId)) {
-          setTasks((prev) => insertAtPosition(prev, task));
+          setTasks((prev) => {
+            const idx = prev.findIndex((t) => t.id === task.id);
+            if (idx !== -1) {
+              // update existing task, use server position
+              const copy = [...prev];
+              const updated = { ...copy[idx], ...task };
+              copy.splice(idx, 1);
+              const pos = Math.max(0, Math.min(updated.position ?? idx, copy.length));
+              copy.splice(pos, 0, updated);
+              return copy;
+            }
+            // insert new task at its position
+            return insertAtPosition(prev, task);
+          });
         } else {
           setTasks((prev) => prev.filter((t) => t.id !== task.id));
         }

@@ -83,45 +83,6 @@ function Board({ search }) {
       console.error("Failed to update task status:", error);
       window.dispatchEvent(new CustomEvent("tasksUpdated"));
     }
-
-    // await db.tasks.update(Number(draggableId), {
-    //   status: destination.droppableId,
-    // });
-
-    try {
-      const res = await fetch(`https://task-manager.ddev.site/api/tasks/${draggableId}`, {
-        method: "PUT",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-        },
-        body: JSON.stringify({ status_id: destination.droppableId }),
-      });
-
-      console.log(`Move task ${draggableId} from ${source.droppableId} to ${destination.droppableId}`);
-
-      // try to parse the updated task object from the response. If unavailable, dispatch minimal detail
-      try {
-        const updatedTask = await res.json();
-        if (updatedTask && updatedTask.id) {
-          window.dispatchEvent(new CustomEvent("tasksUpdated", { detail: updatedTask }));
-        } else {
-          const updated = { id: Number(draggableId), status_id: destination.droppableId };
-          window.dispatchEvent(new CustomEvent("tasksUpdated", { detail: updated }));
-        }
-      } catch {
-        // If JSON parse fails, fallback to minimal dispatch
-        const updated = { id: Number(draggableId), status_id: destination.droppableId };
-        try {
-          window.dispatchEvent(new CustomEvent("tasksUpdated", { detail: updated }));
-        } catch (e) {
-          void e;
-        }
-      }
-    } catch (error) {
-      console.error("Failed to update task status:", error);
-    }
   };
 
   return (
