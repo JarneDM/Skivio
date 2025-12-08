@@ -1,33 +1,45 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthContext from "../contexts/AuthContext.jsx";
+import Error from "../components/popups/Error.jsx";
 
 function Login() {
   const { login, setUser } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [error, setError] = useState(null);
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    const res = await fetch("https://task-manager.ddev.site/api/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: e.target.email.value,
-        password: e.target.password.value,
-      }),
-    });
+    try {
+      const res = await fetch("https://task-manager.ddev.site/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: e.target.email.value,
+          password: e.target.password.value,
+        }),
+      });
 
-    const user = await res.json();
-    localStorage.setItem("auth_token", user.token);
-    console.log("Logged in user:", user);
-    console.log("token:", user.token);
-    setUser(user);
-    login(user.user);
+      const user = await res.json();
+      localStorage.setItem("auth_token", user.token);
+      console.log("Logged in user:", user);
+      console.log("token:", user.token);
+      setUser(user);
+      login(user.user);
 
-    navigate("/");
+      if (res.ok) {
+        navigate("/");
+      } else {
+        setError("Login failed. Please check your credentials and try again.");
+      }
+    } catch (err) {
+      console.error("Login failed:", err);
+      setError("Login failed. Please check your credentials and try again.");
+      return;
+    }
   };
   return (
     <div className="flex flex-col max-w-sm mx-auto mt-[15%] p-6 border rounded-lg shadow-lg bg-white justify-center items-center">
@@ -52,6 +64,7 @@ function Login() {
           </Link>
         </p>
       </form>
+      {error && <Error message={error} />}
     </div>
   );
 }
