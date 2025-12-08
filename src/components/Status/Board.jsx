@@ -30,56 +30,58 @@ function Board({ search }) {
 
     if (!destination) return;
 
-    if (destination.droppableId === source.droppableId) {
-      if (destination.index === source.index) return;
-      const reorderDetail = {
-        reorder: true,
-        id: Number(draggableId),
-        status_id: destination.droppableId,
-        fromIndex: source.index,
-        toIndex: destination.index,
-      };
+    const moveDetail = {
+      move: true,
+      id: Number(draggableId),
+      fromStatus: source.droppableId,
+      toStatus: destination.droppableId,
+      fromIndex: source.index,
+      toIndex: destination.index,
+    };
 
-      try {
-        window.dispatchEvent(new CustomEvent("tasksUpdated", { detail: reorderDetail }));
-      } catch (e) {
-        void e;
+    // optimistically update UI first
+    try {
+      window.dispatchEvent(new CustomEvent("tasksUpdated", { detail: moveDetail }));
+    } catch (e) {
+      void e;
+    }
+
+    // persist new status and position
+    try {
+      const res = await fetch(`https://task-manager.ddev.site/api/tasks/${draggableId}`, {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+        body: JSON.stringify({ status_id: destination.droppableId, position: destination.index }),
+      });
+
+      console.log(`Move task ${draggableId} from ${source.droppableId} to ${destination.droppableId}`);
+
+      if (!res.ok) {
+        window.dispatchEvent(new CustomEvent("tasksUpdated"));
+        return;
       }
 
-      (async () => {
-        try {
-          const res = await fetch(`https://task-manager.ddev.site/api/tasks/${draggableId}`, {
-            method: "PUT",
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-            },
-            body: JSON.stringify({ position: destination.index, status_id: destination.droppableId }),
-          });
-
-          if (!res.ok) {
-            // fallback: ask clients to refetch full lists
-            window.dispatchEvent(new CustomEvent("tasksUpdated"));
-            return;
-          }
-
-          try {
-            const updatedTask = await res.json();
-            if (updatedTask && updatedTask.id) {
-              window.dispatchEvent(new CustomEvent("tasksUpdated", { detail: updatedTask }));
-            }
-          } catch {
-            // ignore JSON parse errors; UI already updated optimistically
-          }
-        } catch (err) {
-          console.error("Failed to persist reordered position:", err);
-          // fallback to full refetch
-          window.dispatchEvent(new CustomEvent("tasksUpdated"));
+      // prefer the server's ordering (position) if it returns JSON
+      try {
+        const updatedTask = await res.json();
+        if (updatedTask && updatedTask.id) {
+          window.dispatchEvent(new CustomEvent("tasksUpdated", { detail: updatedTask }));
+          return;
         }
-      })();
+      } catch {
+        // fall through to minimal dispatch
+      }
 
-      return;
+      // fallback minimal detail with requested position
+      const persisted = { id: Number(draggableId), status_id: destination.droppableId, position: destination.index };
+      window.dispatchEvent(new CustomEvent("tasksUpdated", { detail: persisted }));
+    } catch (error) {
+      console.error("Failed to update task status:", error);
+      window.dispatchEvent(new CustomEvent("tasksUpdated"));
     }
 
     // await db.tasks.update(Number(draggableId), {
@@ -99,7 +101,7 @@ function Board({ search }) {
 
       console.log(`Move task ${draggableId} from ${source.droppableId} to ${destination.droppableId}`);
 
-      // Try to parse the updated task object from the response. If unavailable, dispatch minimal detail.
+      // try to parse the updated task object from the response. If unavailable, dispatch minimal detail
       try {
         const updatedTask = await res.json();
         if (updatedTask && updatedTask.id) {

@@ -50,7 +50,22 @@ function TaskCards({ statusColor, status, search, setDueDate, dueDate }) {
       return byStatus && byProject;
     });
 
+    // sort by position then id for deterministic ordering
+    filtered.sort((a, b) => {
+      const pa = a.position ?? 0;
+      const pb = b.position ?? 0;
+      if (pa !== pb) return pa - pb;
+      return (a.id ?? 0) - (b.id ?? 0);
+    });
+
     setTasks(filtered);
+  };
+
+  const insertAtPosition = (list, task) => {
+    const copy = list.filter((t) => t.id !== task.id);
+    const pos = Math.max(0, Math.min(task.position ?? copy.length, copy.length));
+    copy.splice(pos, 0, task);
+    return copy;
   };
 
   useEffect(() => {
@@ -65,27 +80,57 @@ function TaskCards({ statusColor, status, search, setDueDate, dueDate }) {
 
       const myStatusId = status?.id ?? status;
 
-      if (detail.reorder) {
-        if (String(detail.status_id) === String(myStatusId)) {
+      if (detail.move) {
+        // remove from source column and capture the task
+        if (String(detail.fromStatus) === String(myStatusId)) {
           setTasks((prev) => {
             const copy = [...prev];
             const idx = copy.findIndex((t) => t.id === detail.id);
             if (idx === -1) return copy;
-
-            const [moved] = copy.splice(idx, 1);
-            const to = Math.max(0, Math.min(detail.toIndex, copy.length));
-            copy.splice(to, 0, moved);
+            const [removed] = copy.splice(idx, 1);
+            // mutate detail to share the removed task with destination handler
+            detail.task = removed;
             return copy;
           });
         }
+
+        // insert into destination column at correct position
+        if (String(detail.toStatus) === String(myStatusId)) {
+          let task = detail.task;
+          if (!task) {
+            try {
+              const res = await fetch(`https://task-manager.ddev.site/api/tasks/${detail.id}`, {
+                headers: {
+                  Accept: "application/json",
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+                },
+              });
+              if (res.ok) {
+                const fetched = await res.json();
+                // project guard
+                if (!selectedProject || String(fetched.project_id) === String(selectedProject.id ?? selectedProject)) {
+                  task = fetched;
+                }
+              }
+            } catch (err) {
+              console.error("Failed to fetch task for move:", err);
+            }
+          }
+
+          if (task) {
+            task.position = detail.toIndex;
+            setTasks((prev) => insertAtPosition(prev, task));
+          }
+        }
+
         return;
       }
-
       if (detail.id && detail.title) {
         const task = detail;
 
         if (String(task.status_id) === String(myStatusId)) {
-          setTasks((prev) => (prev.some((t) => t.id === task.id) ? prev : [...prev, task]));
+          setTasks((prev) => insertAtPosition(prev, task));
         } else {
           setTasks((prev) => prev.filter((t) => t.id !== task.id));
         }
@@ -97,24 +142,39 @@ function TaskCards({ statusColor, status, search, setDueDate, dueDate }) {
         const newStatus = detail.status_id;
 
         if (String(newStatus) === String(myStatusId)) {
-          if (tasks.some((t) => t.id === movedId)) return;
-
-          const res = await fetch(`https://task-manager.ddev.site/api/tasks/${movedId}`, {
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-            },
+          // update task if already present
+          setTasks((prev) => {
+            const existing = prev.find((t) => t.id === movedId);
+            if (existing) {
+              existing.position = detail.position ?? existing.position;
+              return insertAtPosition(prev, existing);
+            }
+            return prev;
           });
 
-          if (!res.ok) return;
-          const task = await res.json();
+          // if not present fetch it then insert at position
+          if (!tasks.some((t) => t.id === movedId)) {
+            try {
+              const res = await fetch(`https://task-manager.ddev.site/api/tasks/${movedId}`, {
+                headers: {
+                  Accept: "application/json",
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+                },
+              });
 
-          if (selectedProject && String(task.project_id) !== String(selectedProject.id)) return;
-
-          setTasks((prev) => [...prev, task]);
+              if (res.ok) {
+                const task = await res.json();
+                if (!selectedProject || String(task.project_id) === String(selectedProject.id ?? selectedProject)) {
+                  task.position = detail.position ?? task.position ?? prev.length;
+                  setTasks((p) => insertAtPosition(p, task));
+                }
+              }
+            } catch (err) {
+              console.error("Failed to fetch task on minimal move detail:", err);
+            }
+          }
         } else {
-          // moved out of this column
           setTasks((prev) => prev.filter((t) => t.id !== movedId));
         }
         return;
@@ -125,7 +185,8 @@ function TaskCards({ statusColor, status, search, setDueDate, dueDate }) {
 
     window.addEventListener("tasksUpdated", onTasksUpdated);
     return () => window.removeEventListener("tasksUpdated", onTasksUpdated);
-  }, [selectedProject, status?.id, tasks]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProject, status?.id]);
 
   const isSameDay = (d1, d2) => {
     if (!d1) return false;
