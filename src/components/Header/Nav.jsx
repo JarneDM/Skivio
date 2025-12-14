@@ -6,16 +6,11 @@ import AddLabel from "../Labels/AddLabel.jsx";
 import ToggleDark from "./ToggleDark.jsx";
 import Skivio from "../../assets/skivio-logo-nobg.png";
 import AuthContext from "../../contexts/AuthContext.jsx";
+import { User } from "lucide-react";
 function Nav({ search, setSearch }) {
   const { logout } = useContext(AuthContext);
 
   const handleLogout = async () => {
-    // await fetch("https://task-manager.ddev.site/api/logout", {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    // });
     logout();
   };
   return (
@@ -37,7 +32,14 @@ function Nav({ search, setSearch }) {
           />
         </div>
 
-        <button onClick={handleLogout}>Logout</button>
+        <div className="flex items-center space-x-2 py-2 justify-between">
+          {/* <button>
+            <User className="text-white cursor-pointer" />
+          </button> */}
+          <button className="bg-red-500 text-white p-1 rounded-md cursor-pointer" onClick={handleLogout}>
+            Logout
+          </button>
+        </div>
 
         <div className="flex items-center space-x-5">
           <AddLabel />

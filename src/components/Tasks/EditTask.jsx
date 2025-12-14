@@ -209,7 +209,7 @@ function EditTask({ selectedTask, setSelectedTask, setShowEdit, dueDate, setDueD
           <div className="flex justify-center items-center space-x-2">
             <button
               onClick={() => setShowEdit(false)}
-              className="cursor-pointer p-2 bg-gray-200 text-black rounded-md hover:bg-blue-700 w-full"
+              className="cursor-pointer p-2 bg-gray-200 text-black rounded-md hover:bg-gray-400 w-full"
             >
               Close
             </button>
